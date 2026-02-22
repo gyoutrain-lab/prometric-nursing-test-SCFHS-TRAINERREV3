@@ -5,12 +5,14 @@
 <title>SCFHS Pathophysiologic Review Engine</title>
 <style>
   body { font-family: Arial, sans-serif; background: #f4f6f8; padding: 20px; }
+  h2 { color: #1a73e8; }
   .question { margin-bottom: 20px; }
-  .options button { display: block; margin: 5px 0; padding: 10px 15px; font-size: 16px; cursor: pointer; }
+  .options button { display: block; margin: 5px 0; padding: 10px 15px; font-size: 16px; cursor: pointer; text-align: left; }
   .correct { background-color: #4CAF50; color: white; }
   .incorrect { background-color: #f44336; color: white; }
-  .rationale { margin-top: 15px; padding: 10px; background: #e8f0fe; border-left: 4px solid #1a73e8; display: none; }
+  .rationale { margin-top: 15px; padding: 15px; background: #e8f0fe; border-left: 4px solid #1a73e8; display: none; }
   #navigation { margin-top: 20px; }
+  #score { font-weight: bold; margin-top: 15px; }
 </style>
 </head>
 <body>
@@ -18,54 +20,129 @@
 <h2>SCFHS Pathophysiologic Review Engine</h2>
 
 <div id="quiz">
-  <div class="question">
-    <p><b>Question 3:</b> A postoperative client suddenly becomes restless, hypotensive, and tachycardic. The surgical drain output has increased significantly. What is the nurse’s <b>PRIORITY</b> action?</p>
-    <div class="options">
-      <button onclick="checkAnswer(this, true)">A. Assess the surgical site and notify the surgeon immediately (SCFHS)</button>
-      <button onclick="checkAnswer(this, false)">B. Administer prescribed analgesics (SAFE_DELAY)</button>
-      <button onclick="checkAnswer(this, false)">C. Reassure the client and continue monitoring (NCLEX)</button>
-      <button onclick="checkAnswer(this, false)">D. Document findings in the medical record (STR)</button>
-    </div>
-    <div class="rationale" id="rationale">
-      <b>Correct Mechanism:</b> Signs indicate possible hemorrhage requiring immediate assessment and notification.<br><br>
-      <b>Option Review:</b><br>
-      A — ✅ Correct: Immediate assessment & notifying the surgeon addresses hemodynamic instability.<br>
-      B — ❌ Pain control does not address urgent instability.<br>
-      C — ❌ Reassurance delays critical intervention.<br>
-      D — ❌ Documentation alone is unsafe without action.
-    </div>
-  </div>
-
+  <div class="question" id="question-container"></div>
+  <div class="rationale" id="rationale"></div>
   <div id="navigation">
+    <button onclick="prevQuestion()">Previous</button>
     <button onclick="nextQuestion()">Next</button>
   </div>
+  <div id="score"></div>
 </div>
 
 <script>
-function checkAnswer(button, isCorrect) {
-  // Disable all buttons after selection
+// ==== Your SCFHS test items in your preferred format ====
+const questions = [
+  {
+    q: "Which action BEST prevents catheter-associated urinary tract infections?",
+    options: [
+      { text: "Removing the catheter as soon as possible", tag: "SCFHS" },
+      { text: "Irrigating the catheter daily", tag: "SAFE_DELAY" },
+      { text: "Using antiseptic solution for cleansing", tag: "NCLEX" },
+      { text: "Changing drainage bags frequently", tag: "STR" }
+    ],
+    correctTag: "SCFHS",
+    rationale: {
+      correct: "Early removal is the most effective prevention strategy.",
+      distractors: {
+        SAFE_DELAY: "Routine irrigation increases infection risk.",
+        NCLEX: "Soap and water are sufficient.",
+        STR: "Frequent bag changes are unnecessary."
+      }
+    }
+  },
+  {
+    q: "A client with diabetes reports shakiness, sweating, and confusion. What is the nurse’s PRIORITY action?",
+    options: [
+      { text: "Check blood glucose level", tag: "SCFHS" },
+      { text: "Administer insulin", tag: "NCLEX" },
+      { text: "Encourage exercise", tag: "SAFE_DELAY" },
+      { text: "Notify the physician", tag: "STR" }
+    ],
+    correctTag: "SCFHS",
+    rationale: {
+      correct: "Symptoms suggest hypoglycemia and require immediate glucose assessment.",
+      distractors: {
+        NCLEX: "Insulin would worsen hypoglycemia.",
+        SAFE_DELAY: "Exercise lowers glucose further.",
+        STR: "Assessment comes before notification."
+      }
+    }
+  }
+  // Add remaining 98+ test items here
+];
+
+let currentIndex = 0;
+let score = 0;
+
+// ==== Load question ====
+function loadQuestion() {
+  const container = document.getElementById('question-container');
+  const rationale = document.getElementById('rationale');
+  rationale.style.display = 'none';
+  container.innerHTML = `<p><b>Q${currentIndex + 1}:</b> ${questions[currentIndex].q}</p>`;
+
+  const optionsHtml = questions[currentIndex].options.map((opt, index) => {
+    return `<button onclick="checkAnswer(this, '${opt.tag}', ${index})">${String.fromCharCode(65 + index)}. ${opt.text} (${opt.tag})</button>`;
+  }).join('');
+  container.innerHTML += `<div class="options">${optionsHtml}</div>`;
+
+  document.getElementById('score').textContent = `Score: ${score} / ${questions.length}`;
+}
+
+// ==== Check answer ====
+function checkAnswer(button, selectedTag, optionIndex) {
   const buttons = button.parentElement.querySelectorAll('button');
   buttons.forEach(b => b.disabled = true);
 
-  // Highlight correct/incorrect
-  if (isCorrect) {
+  const correctTag = questions[currentIndex].correctTag;
+
+  // Highlight selected button
+  if (selectedTag === correctTag) {
     button.classList.add('correct');
+    score++;
   } else {
     button.classList.add('incorrect');
-    // Optionally highlight the correct answer
-    buttons.forEach(b => {
-      if (b.textContent.startsWith("A.")) b.classList.add('correct');
+    // Highlight correct button
+    buttons.forEach((b, i) => {
+      if (questions[currentIndex].options[i].tag === correctTag) b.classList.add('correct');
     });
   }
 
-  // Show rationale
-  document.getElementById('rationale').style.display = 'block';
+  // Show professional rationale
+  const rationale = document.getElementById('rationale');
+  let rationaleHtml = `<b>Analysis:</b><br>`;
+  questions[currentIndex].options.forEach(opt => {
+    const symbol = (opt.tag === correctTag) ? "✅" : "❌";
+    const analysisText = (opt.tag === correctTag) 
+      ? questions[currentIndex].rationale.correct 
+      : questions[currentIndex].rationale.distractors[opt.tag];
+    rationaleHtml += `${symbol} ${opt.text} (${opt.tag}): ${analysisText}<br><br>`;
+  });
+  rationale.innerHTML = rationaleHtml;
+  rationale.style.display = 'block';
+
+  document.getElementById('score').textContent = `Score: ${score} / ${questions.length}`;
 }
 
+// ==== Navigation ====
 function nextQuestion() {
-  alert("Move to next question functionality goes here.");
-  // You can add logic to load the next question dynamically
+  if (currentIndex < questions.length - 1) {
+    currentIndex++;
+    loadQuestion();
+  } else {
+    alert(`Quiz complete! Final score: ${score} / ${questions.length}`);
+  }
 }
+
+function prevQuestion() {
+  if (currentIndex > 0) {
+    currentIndex--;
+    loadQuestion();
+  }
+}
+
+// ==== Initialize quiz ====
+loadQuestion();
 </script>
 
 </body>
