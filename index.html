@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>SCFHS Pathophysiologic Review Engine</title>
+<title>SCFHS Quiz Engine</title>
 <style>
   body { font-family: Arial, sans-serif; background: #f4f6f8; padding: 20px; }
   h2 { color: #1a73e8; }
@@ -13,24 +13,32 @@
   .rationale { margin-top: 15px; padding: 15px; background: #e8f0fe; border-left: 4px solid #1a73e8; display: none; }
   #navigation { margin-top: 20px; }
   #score { font-weight: bold; margin-top: 15px; }
+  #jump { margin-top: 15px; }
 </style>
 </head>
 <body>
 
-<h2>SCFHS Pathophysiologic Review Engine</h2>
+<h2>SCFHS Quiz Engine</h2>
 
 <div id="quiz">
   <div class="question" id="question-container"></div>
   <div class="rationale" id="rationale"></div>
+  
   <div id="navigation">
     <button onclick="prevQuestion()">Previous</button>
     <button onclick="nextQuestion()">Next</button>
   </div>
+  
+  <div id="jump">
+    Jump to question #: <input type="number" id="jumpInput" min="1" style="width:50px">
+    <button onclick="jumpToQuestion()">Go</button>
+  </div>
+  
   <div id="score"></div>
 </div>
 
 <script>
-// ==== Your SCFHS test items in your preferred format ====
+// ==== Use your exact SCFHS test items here ====
 const questions = [
   {
     q: "Which action BEST prevents catheter-associated urinary tract infections?",
@@ -68,7 +76,7 @@ const questions = [
       }
     }
   }
-  // Add remaining 98+ test items here
+  // Inject remaining 98+ test items exactly in the same format
 ];
 
 let currentIndex = 0;
@@ -82,7 +90,7 @@ function loadQuestion() {
   container.innerHTML = `<p><b>Q${currentIndex + 1}:</b> ${questions[currentIndex].q}</p>`;
 
   const optionsHtml = questions[currentIndex].options.map((opt, index) => {
-    return `<button onclick="checkAnswer(this, '${opt.tag}', ${index})">${String.fromCharCode(65 + index)}. ${opt.text} (${opt.tag})</button>`;
+    return `<button onclick="checkAnswer(this, '${opt.tag}')">${String.fromCharCode(65 + index)}. ${opt.text} (${opt.tag})</button>`;
   }).join('');
   container.innerHTML += `<div class="options">${optionsHtml}</div>`;
 
@@ -90,7 +98,7 @@ function loadQuestion() {
 }
 
 // ==== Check answer ====
-function checkAnswer(button, selectedTag, optionIndex) {
+function checkAnswer(button, selectedTag) {
   const buttons = button.parentElement.querySelectorAll('button');
   buttons.forEach(b => b.disabled = true);
 
@@ -108,13 +116,13 @@ function checkAnswer(button, selectedTag, optionIndex) {
     });
   }
 
-  // Show professional rationale
+  // Show rationale and optional pathophysiologic analysis
   const rationale = document.getElementById('rationale');
   let rationaleHtml = `<b>Analysis:</b><br>`;
   questions[currentIndex].options.forEach(opt => {
     const symbol = (opt.tag === correctTag) ? "✅" : "❌";
-    const analysisText = (opt.tag === correctTag) 
-      ? questions[currentIndex].rationale.correct 
+    const analysisText = (opt.tag === correctTag)
+      ? questions[currentIndex].rationale.correct
       : questions[currentIndex].rationale.distractors[opt.tag];
     rationaleHtml += `${symbol} ${opt.text} (${opt.tag}): ${analysisText}<br><br>`;
   });
@@ -138,6 +146,16 @@ function prevQuestion() {
   if (currentIndex > 0) {
     currentIndex--;
     loadQuestion();
+  }
+}
+
+function jumpToQuestion() {
+  const qNum = parseInt(document.getElementById('jumpInput').value);
+  if (!isNaN(qNum) && qNum >= 1 && qNum <= questions.length) {
+    currentIndex = qNum - 1;
+    loadQuestion();
+  } else {
+    alert(`Enter a valid question number between 1 and ${questions.length}`);
   }
 }
 
