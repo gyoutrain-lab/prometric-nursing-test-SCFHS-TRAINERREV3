@@ -90,6 +90,98 @@ const mechanismLibrary = {
 // Format must match your model {q, options, correctTag, rationale}
 // ================================
 const questions = [
+  <!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>SCFHS Classroom Rationale Engine — Professional</title>
+<style>
+body { font-family: Arial, sans-serif; background:#f4f6f8; margin:0; padding:0; }
+.container { max-width:1000px; margin:auto; background:#fff; padding:25px; border-radius:8px; box-shadow:0 0 10px rgba(0,0,0,0.1); }
+h2 { text-align:center; margin-bottom:20px; }
+.option { margin:10px 0; padding:12px; border:1px solid #ccc; border-radius:6px; cursor:pointer; transition:0.2s; }
+.option:hover { background:#f0f8ff; }
+.correct { background:#d4edda; border-color:#28a745; }
+.incorrect { background:#f8d7da; border-color:#dc3545; }
+button { margin-top:15px; padding:10px 20px; font-size:16px; }
+.hidden { display:none; }
+
+.review { margin-top:20px; padding:15px; background:#f9fafb; border-left:5px solid #007bff; }
+.tag { font-size:12px; padding:2px 6px; border-radius:4px; margin-left:6px; }
+.SCFHS { background:#d4edda; }
+.NCLEX { background:#cce5ff; }
+.STR { background:#fff3cd; }
+.SAFE_DELAY { background:#e2e3e5; }
+
+.expand { margin-top:15px; background:#eef5ff; padding:12px; border-radius:6px; }
+.expand pre { background:#fff; padding:10px; border:1px dashed #007bff; white-space:pre-wrap; }
+.header { font-weight:bold; margin-top:10px; }
+
+.progress-container { width:100%; background:#e2e3e5; border-radius:5px; overflow:hidden; margin-bottom:20px; }
+.progress-bar { height:20px; width:0%; background:#007bff; text-align:center; color:#fff; line-height:20px; transition:0.3s; }
+
+.jump-container { margin-bottom:20px; }
+.jump-container input { width:60px; padding:6px; margin-right:10px; }
+</style>
+</head>
+<body>
+
+<div class="container">
+<h2>SCFHS Classroom Rationale Engine — Professional</h2>
+
+<div id="startDiv">
+  <button id="startBtn">Start Quiz</button>
+</div>
+
+<div class="jump-container hidden" id="jumpDiv">
+  Jump to question: 
+  <input type="number" id="jumpInput" min="1">
+  <button onclick="jumpToQuestion()">Go</button>
+</div>
+
+<div class="progress-container">
+  <div class="progress-bar" id="progressBar">0%</div>
+</div>
+
+<div id="quiz" class="hidden"></div>
+<div id="review" class="review hidden"></div>
+<button onclick="nextQuestion()" id="nextBtn" class="hidden">Next Question</button>
+</div>
+
+<script>
+// ================================
+// MECHANISM LIBRARY
+// Maps correctTag → Core Principle / Pathophysiology / Intuitive mapping
+// ================================
+const mechanismLibrary = {
+  SCFHS: {
+    core: "Conduction → direct contact",
+    patho: "Direct contact with cooler medium → heat flows from skin → core temperature decreases",
+    intuitive: "Touch ice = conduction"
+  },
+  NCLEX: {
+    core: "Convection → moving air/fluid",
+    patho: "Body exposed to moving fluid → heat transfer via convection → core temperature decreases",
+    intuitive: "Cold wind = convection"
+  },
+  STR: {
+    core: "Radiation → no contact",
+    patho: "Heat lost via electromagnetic waves → no direct contact → body temperature decreases",
+    intuitive: "Sun = radiation"
+  },
+  SAFE_DELAY: {
+    core: "Evaporation → liquid to vapor",
+    patho: "Sweating or moisture on skin vaporizes → heat is lost → body temperature decreases",
+    intuitive: "Sweat drying = evaporation"
+  }
+};
+
+// ================================
+// QUESTION BANK
+// Inject your 100+ questions here
+// Format must match your model {q, options, correctTag, rationale}
+// ================================
+const questions = [
   {
     q: "When the nurse put the baby with high temperature in to cold water the baby will lose temperature through?",
     options: [
@@ -127,6 +219,116 @@ const questions = [
     }
   }
 ];
+
+// ================================
+// ENGINE STATE
+// ================================
+let index = 0;
+
+// ================================
+// START QUIZ
+// ================================
+document.getElementById("startBtn").addEventListener("click", function(){
+  document.getElementById("startDiv").classList.add("hidden");
+  document.getElementById("quiz").classList.remove("hidden");
+  document.getElementById("jumpDiv").classList.remove("hidden");
+  renderQuestion();
+});
+
+// ================================
+// RENDER QUESTION
+// ================================
+function renderQuestion() {
+  const q = questions[index];
+  const quizDiv = document.getElementById("quiz");
+  document.getElementById("review").classList.add("hidden");
+  document.getElementById("nextBtn").classList.add("hidden");
+
+  quizDiv.innerHTML = `<p><b>Question ${index+1}:</b><br>${q.q}</p>`;
+  q.options.forEach((o,i)=>{
+    const div = document.createElement("div");
+    div.classList.add("option");
+    div.innerHTML = `${String.fromCharCode(65+i)}. ${o.text} <span class="tag ${o.tag}">${o.tag}</span>`;
+    div.onclick = ()=>selectAnswer(o.tag, div);
+    quizDiv.appendChild(div);
+  });
+  updateProgress();
+}
+
+// ================================
+// HANDLE SELECTION
+// ================================
+function selectAnswer(tag, div) {
+  const q = questions[index];
+  const review = document.getElementById("review");
+  review.classList.remove("hidden");
+
+  document.querySelectorAll(".option").forEach(d=>d.style.pointerEvents="none");
+  document.querySelectorAll(".option").forEach(d=>{
+    if(d.innerHTML.includes(q.correctTag)) d.classList.add("correct");
+    else d.classList.add("incorrect");
+  });
+
+  // Get mechanism-specific rationale
+  const mech = mechanismLibrary[q.correctTag];
+
+  let html = `<div class="header">✅ Correct Rationale</div>${q.rationale.correct}`;
+  html += `<div class="header">❌ Option Analysis</div>`;
+  q.options.forEach(o=>{
+    if(o.tag===q.correctTag) html += `<div><b>${o.text}</b> (${o.tag}) — Correct</div>`;
+    else html += `<div><b>${o.text}</b> (${o.tag}) — ${q.rationale.distractors[o.tag]}</div>`;
+  });
+
+  html += `<div class="expand">
+    <div class="header">Core Principle (Exam Language)</div><pre>${mech.core}</pre>
+    <div class="header">Pathophysiologic Chain</div><pre>${mech.patho}</pre>
+    <div class="header">Intuitive Clinical Mapping</div><pre>${mech.intuitive}</pre>
+  </div>`;
+
+  review.innerHTML = html;
+  document.getElementById("nextBtn").classList.remove("hidden");
+}
+
+// ================================
+// NEXT QUESTION
+// ================================
+function nextQuestion() {
+  index++;
+  if(index >= questions.length){
+    document.getElementById("quiz").innerHTML="<h3>End of Review</h3>";
+    document.getElementById("review").classList.add("hidden");
+    document.getElementById("nextBtn").classList.add("hidden");
+    return;
+  }
+  renderQuestion();
+}
+
+// ================================
+// JUMP TO SPECIFIC QUESTION
+// ================================
+function jumpToQuestion() {
+  const input = parseInt(document.getElementById("jumpInput").value);
+  if(isNaN(input)||input<1||input>questions.length){
+    alert("Invalid question number");
+    return;
+  }
+  index = input-1;
+  renderQuestion();
+}
+
+// ================================
+// PROGRESS BAR
+// ================================
+function updateProgress(){
+  const bar = document.getElementById("progressBar");
+  const percent = Math.round(((index)/questions.length)*100);
+  bar.style.width = percent+"%";
+  bar.innerText = percent+"%";
+}
+</script>
+
+</body>
+</html>
 
 // ================================
 // ENGINE STATE
