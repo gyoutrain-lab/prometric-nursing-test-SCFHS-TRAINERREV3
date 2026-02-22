@@ -38,7 +38,7 @@
 </div>
 
 <script>
-// ==== Use your exact SCFHS test items here ====
+// ==== Example SCFHS test items (your exact format) ====
 const questions = [
   {
     q: "Which action BEST prevents catheter-associated urinary tract infections?",
@@ -56,6 +56,9 @@ const questions = [
         NCLEX: "Soap and water are sufficient.",
         STR: "Frequent bag changes are unnecessary."
       }
+    },
+    analysis: {
+      SCFHS: "Catheter-associated urinary tract infections occur because bacteria ascend along the catheter into the bladder. Removing the catheter early reduces exposure time, prevents biofilm formation, and decreases risk of bacterial colonization. This preserves normal host defenses, prevents inflammatory response in the urinary tract, and lowers risk of sepsis."
     }
   },
   {
@@ -74,9 +77,12 @@ const questions = [
         SAFE_DELAY: "Exercise lowers glucose further.",
         STR: "Assessment comes before notification."
       }
+    },
+    analysis: {
+      SCFHS: "Hypoglycemia occurs due to excess insulin or insufficient carbohydrate intake. Low blood glucose stimulates the autonomic nervous system causing shakiness, sweating, and tachycardia. CNS symptoms include confusion. Immediate glucose assessment allows rapid correction to prevent seizures, coma, or death."
     }
   }
-  // Inject remaining 98+ test items exactly in the same format
+  // Inject remaining 98+ test items here
 ];
 
 let currentIndex = 0;
@@ -97,32 +103,31 @@ function loadQuestion() {
   document.getElementById('score').textContent = `Score: ${score} / ${questions.length}`;
 }
 
-// ==== Check answer ====
+// ==== Check answer and show professional analysis ====
 function checkAnswer(button, selectedTag) {
   const buttons = button.parentElement.querySelectorAll('button');
   buttons.forEach(b => b.disabled = true);
 
   const correctTag = questions[currentIndex].correctTag;
 
-  // Highlight selected button
   if (selectedTag === correctTag) {
     button.classList.add('correct');
     score++;
   } else {
     button.classList.add('incorrect');
-    // Highlight correct button
+    // Highlight correct answer
     buttons.forEach((b, i) => {
       if (questions[currentIndex].options[i].tag === correctTag) b.classList.add('correct');
     });
   }
 
-  // Show rationale and optional pathophysiologic analysis
+  // Show rationale + pathophysiologic why/how for SCFHS
   const rationale = document.getElementById('rationale');
   let rationaleHtml = `<b>Analysis:</b><br>`;
   questions[currentIndex].options.forEach(opt => {
     const symbol = (opt.tag === correctTag) ? "✅" : "❌";
     const analysisText = (opt.tag === correctTag)
-      ? questions[currentIndex].rationale.correct
+      ? questions[currentIndex].analysis?.SCFHS || questions[currentIndex].rationale.correct
       : questions[currentIndex].rationale.distractors[opt.tag];
     rationaleHtml += `${symbol} ${opt.text} (${opt.tag}): ${analysisText}<br><br>`;
   });
