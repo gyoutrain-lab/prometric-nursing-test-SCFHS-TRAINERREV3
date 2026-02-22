@@ -2,269 +2,71 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>SCFHS Classroom Auto-Rationale Engine</title>
+<title>SCFHS Pathophysiologic Review Engine</title>
 <style>
-body { font-family: Arial, sans-serif; background:#f4f6f8; margin:0; padding:0; }
-.container { max-width:1000px; margin:auto; background:#fff; padding:25px; border-radius:8px; box-shadow:0 0 10px rgba(0,0,0,0.1); }
-h2 { text-align:center; margin-bottom:20px; }
-.option { margin:10px 0; padding:12px; border:1px solid #ccc; border-radius:6px; cursor:pointer; transition:0.2s; }
-.option:hover { background:#f0f8ff; }
-.correct { background:#d4edda; border-color:#28a745; }
-.incorrect { background:#f8d7da; border-color:#dc3545; }
-button { margin-top:15px; padding:10px 20px; font-size:16px; }
-.hidden { display:none; }
-
-.review { margin-top:20px; padding:15px; background:#f9fafb; border-left:5px solid #007bff; }
-.tag { font-size:12px; padding:2px 6px; border-radius:4px; margin-left:6px; }
-.SCFHS { background:#d4edda; }
-.NCLEX { background:#cce5ff; }
-.STR { background:#fff3cd; }
-.SAFE_DELAY { background:#e2e3e5; }
-
-.expand { margin-top:15px; background:#eef5ff; padding:12px; border-radius:6px; }
-.expand pre { background:#fff; padding:10px; border:1px dashed #007bff; white-space:pre-wrap; }
-.header { font-weight:bold; margin-top:10px; }
-
-.progress-container { width:100%; background:#e2e3e5; border-radius:5px; overflow:hidden; margin-bottom:20px; }
-.progress-bar { height:20px; width:0%; background:#007bff; text-align:center; color:#fff; line-height:20px; transition:0.3s; }
-
-.jump-container { margin-bottom:20px; }
-.jump-container input { width:60px; padding:6px; margin-right:10px; }
+  body { font-family: Arial, sans-serif; background: #f4f6f8; padding: 20px; }
+  .question { margin-bottom: 20px; }
+  .options button { display: block; margin: 5px 0; padding: 10px 15px; font-size: 16px; cursor: pointer; }
+  .correct { background-color: #4CAF50; color: white; }
+  .incorrect { background-color: #f44336; color: white; }
+  .rationale { margin-top: 15px; padding: 10px; background: #e8f0fe; border-left: 4px solid #1a73e8; display: none; }
+  #navigation { margin-top: 20px; }
 </style>
 </head>
 <body>
 
-<div class="container">
-<h2>SCFHS Classroom Auto-Rationale Engine</h2>
+<h2>SCFHS Pathophysiologic Review Engine</h2>
 
-<div id="startDiv">
-  <button id="startBtn">Start Quiz</button>
-</div>
+<div id="quiz">
+  <div class="question">
+    <p><b>Question 3:</b> A postoperative client suddenly becomes restless, hypotensive, and tachycardic. The surgical drain output has increased significantly. What is the nurse’s <b>PRIORITY</b> action?</p>
+    <div class="options">
+      <button onclick="checkAnswer(this, true)">A. Assess the surgical site and notify the surgeon immediately (SCFHS)</button>
+      <button onclick="checkAnswer(this, false)">B. Administer prescribed analgesics (SAFE_DELAY)</button>
+      <button onclick="checkAnswer(this, false)">C. Reassure the client and continue monitoring (NCLEX)</button>
+      <button onclick="checkAnswer(this, false)">D. Document findings in the medical record (STR)</button>
+    </div>
+    <div class="rationale" id="rationale">
+      <b>Correct Mechanism:</b> Signs indicate possible hemorrhage requiring immediate assessment and notification.<br><br>
+      <b>Option Review:</b><br>
+      A — ✅ Correct: Immediate assessment & notifying the surgeon addresses hemodynamic instability.<br>
+      B — ❌ Pain control does not address urgent instability.<br>
+      C — ❌ Reassurance delays critical intervention.<br>
+      D — ❌ Documentation alone is unsafe without action.
+    </div>
+  </div>
 
-<div class="jump-container hidden" id="jumpDiv">
-  Jump to question: 
-  <input type="number" id="jumpInput" min="1">
-  <button onclick="jumpToQuestion()">Go</button>
-</div>
-
-<div class="progress-container">
-  <div class="progress-bar" id="progressBar">0%</div>
-</div>
-
-<div id="quiz" class="hidden"></div>
-<div id="review" class="review hidden"></div>
-<button onclick="nextQuestion()" id="nextBtn" class="hidden">Next Question</button>
+  <div id="navigation">
+    <button onclick="nextQuestion()">Next</button>
+  </div>
 </div>
 
 <script>
-// ================================
-// AUTO-RATIONALE MECHANISM GENERATOR
-// ================================
-function getMechanismDetails(domain, rationale){
-  const autoMechanisms = {
-    obstetricMechanics:{
-      core:"Mechanical factors → fetal position / size / passageway",
-      patho:"Dystocia occurs when fetal head or body cannot progress through birth canal → prolonged labor → maternal/fetal risk",
-      intuitive:"Baby stuck due to position = mechanical obstruction"
-    },
-    hemodynamics:{
-      core:"Hypovolemia → ↓ preload → ↓ cardiac output → ↓ MAP",
-      patho:"Blood loss or fluid shift → decreased venous return → organ hypoperfusion → hypotension",
-      intuitive:"Low BP, high HR, low urine output = shock"
-    },
-    coagulation:{
-      core:"Virchow's triad → stasis, endothelial injury, hypercoagulability",
-      patho:"DVT forms when any triad element present → risk for embolism",
-      intuitive:"Leg swelling + pain = clot risk"
-    },
-    infectionControl:{
-      core:"Airborne → negative pressure\nDroplet → mask + isolation\nContact → gloves/gown",
-      patho:"TB spreads via air → requires negative-pressure room to prevent inhalation",
-      intuitive:"Isolation prevents spread to staff/patients"
-    },
-    transfusionReaction:{
-      core:"Acute hemolysis → immune-mediated destruction of RBCs",
-      patho:"Incompatible blood → antigen-antibody reaction → fever, chills, hypotension",
-      intuitive:"Sudden chills/fever = transfusion reaction"
-    },
-    painPathophysiology:{
-      core:"Pain perception modulated by CNS + sensory input; non-pharmacologic measures help",
-      patho:"Relaxation / guided imagery → CNS distraction → reduced pain perception",
-      intuitive:"Guided imagery, breathing, music reduce pain"
-    }
-  };
-  return autoMechanisms[domain] || {
-    core:"Core Principle (Exam Language) not available",
-    patho:rationale.correct,
-    intuitive:"Intuitive mapping not available — use clinical reasoning"
-  };
-}
+function checkAnswer(button, isCorrect) {
+  // Disable all buttons after selection
+  const buttons = button.parentElement.querySelectorAll('button');
+  buttons.forEach(b => b.disabled = true);
 
-// ================================
-// QUESTION BANK (inject your 100+ items)
-// ================================
-const questions = [
-  {
-    q: "Which of the following factors is the underlying cause of dystocia?",
-    options: [
-      { text: "Nutritional", tag: "STR" },
-      { text: "Mechanical", tag: "SCFHS" },
-      { text: "Environmental", tag: "SAFE_DELAY" },
-      { text: "Medical", tag: "NCLEX" }
-    ],
-    correctTag: "SCFHS",
-    domain:"obstetricMechanics",
-    rationale: {
-      correct: "Mechanical problems such as fetal position commonly cause dystocia.",
-      distractors: {
-        STR: "Nutrition is not primary.",
-        SAFE_DELAY: "Environment is not causative.",
-        NCLEX: "Medical factors are secondary."
-      }
-    }
-  },
-  {
-    q: "An older adult client with a history of blood clots is in the emergency room with suspected DVT. Which is LEAST likely in care plan?",
-    options: [
-      { text: "Ambulation as tolerated", tag: "SCFHS" },
-      { text: "Warm, moist soaks", tag: "NCLEX" },
-      { text: "Analgesics as ordered", tag: "SAFE_DELAY" },
-      { text: "Anti-embolism stockings", tag: "STR" }
-    ],
-    correctTag: "SCFHS",
-    domain:"coagulation",
-    rationale: {
-      correct: "Early ambulation increases risk of embolization in acute DVT.",
-      distractors: {
-        NCLEX: "Warm soaks relieve pain.",
-        SAFE_DELAY: "Analgesics are appropriate.",
-        STR: "Stockings help prevent venous stasis."
-      }
-    }
-  },
-  {
-    q: "A client with tuberculosis is admitted. Which infection-control measure is MOST appropriate?",
-    options: [
-      { text: "Negative-pressure room", tag: "SCFHS" },
-      { text: "Contact isolation", tag: "NCLEX" },
-      { text: "Private room only", tag: "SAFE_DELAY" },
-      { text: "Droplet precautions", tag: "STR" }
-    ],
-    correctTag: "SCFHS",
-    domain:"infectionControl",
-    rationale: {
-      correct: "Tuberculosis is airborne and requires negative-pressure room.",
-      distractors: {
-        NCLEX: "Contact precautions insufficient.",
-        SAFE_DELAY: "Private room alone does not prevent spread.",
-        STR: "Droplet precautions are inadequate."
-      }
-    }
+  // Highlight correct/incorrect
+  if (isCorrect) {
+    button.classList.add('correct');
+  } else {
+    button.classList.add('incorrect');
+    // Optionally highlight the correct answer
+    buttons.forEach(b => {
+      if (b.textContent.startsWith("A.")) b.classList.add('correct');
+    });
   }
-];
 
-// ================================
-// ENGINE STATE
-// ================================
-let index = 0;
-
-// ================================
-// START QUIZ
-// ================================
-document.getElementById("startBtn").addEventListener("click", function(){
-  document.getElementById("startDiv").classList.add("hidden");
-  document.getElementById("quiz").classList.remove("hidden");
-  document.getElementById("jumpDiv").classList.remove("hidden");
-  renderQuestion();
-});
-
-// ================================
-// RENDER QUESTION
-// ================================
-function renderQuestion(){
-  const q = questions[index];
-  const quizDiv = document.getElementById("quiz");
-  document.getElementById("review").classList.add("hidden");
-  document.getElementById("nextBtn").classList.add("hidden");
-  quizDiv.innerHTML = `<p><b>Question ${index+1}:</b><br>${q.q}</p>`;
-  q.options.forEach((o,i)=>{
-    const div = document.createElement("div");
-    div.classList.add("option");
-    div.innerHTML = `${String.fromCharCode(65+i)}. ${o.text} <span class="tag ${o.tag}">${o.tag}</span>`;
-    div.onclick = ()=>selectAnswer(o.tag, div);
-    quizDiv.appendChild(div);
-  });
-  updateProgress();
+  // Show rationale
+  document.getElementById('rationale').style.display = 'block';
 }
 
-// ================================
-// HANDLE ANSWER
-// ================================
-function selectAnswer(tag, div){
-  const q = questions[index];
-  const review = document.getElementById("review");
-  review.classList.remove("hidden");
-  document.querySelectorAll(".option").forEach(d=>d.style.pointerEvents="none");
-  document.querySelectorAll(".option").forEach(d=>{
-    if(d.innerHTML.includes(q.correctTag)) d.classList.add("correct");
-    else d.classList.add("incorrect");
-  });
-
-  const mech = getMechanismDetails(q.domain, q.rationale);
-
-  let html = `<div class="header">✅ Correct Rationale</div>${q.rationale.correct}`;
-  html += `<div class="header">❌ Option Analysis</div>`;
-  q.options.forEach(o=>{
-    if(o.tag===q.correctTag) html += `<div><b>${o.text}</b> (${o.tag}) — Correct</div>`;
-    else html += `<div><b>${o.text}</b> (${o.tag}) — ${q.rationale.distractors[o.tag]}</div>`;
-  });
-
-  html += `<div class="expand">
-    <div class="header">Core Principle (Exam Language)</div><pre>${mech.core}</pre>
-    <div class="header">Pathophysiologic Chain</div><pre>${mech.patho}</pre>
-    <div class="header">Intuitive Clinical Mapping</div><pre>${mech.intuitive}</pre>
-  </div>`;
-
-  review.innerHTML = html;
-  document.getElementById("nextBtn").classList.remove("hidden");
-}
-
-// ================================
-// NEXT QUESTION
-// ================================
-function nextQuestion(){
-  index++;
-  if(index>=questions.length){
-    document.getElementById("quiz").innerHTML="<h3>End of Review</h3>";
-    document.getElementById("review").classList.add("hidden");
-    document.getElementById("nextBtn").classList.add("hidden");
-    return;
-  }
-  renderQuestion();
-}
-
-// ================================
-// JUMP TO SPECIFIC QUESTION
-// ================================
-function jumpToQuestion(){
-  const input = parseInt(document.getElementById("jumpInput").value);
-  if(isNaN(input)||input<1||input>questions.length){
-    alert("Invalid question number");
-    return;
-  }
-  index=input-1;
-  renderQuestion();
-}
-
-// ================================
-// PROGRESS BAR
-// ================================
-function updateProgress(){
-  const bar=document.getElementById("progressBar");
-  const percent=Math.round((index)/questions.length*100);
-  bar.style.width=percent+"%";
-  bar.innerText=percent+"%";
+function nextQuestion() {
+  alert("Move to next question functionality goes here.");
+  // You can add logic to load the next question dynamically
 }
 </script>
+
 </body>
 </html>
