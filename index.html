@@ -15,7 +15,6 @@ button { margin-top:15px; padding:10px 20px; font-size:16px; }
 .hidden { display:none; }
 
 .review { margin-top:20px; padding:15px; background:#f9fafb; border-left:5px solid #007bff; }
-
 .tag { font-size:12px; padding:2px 6px; border-radius:4px; margin-left:6px; }
 .SCFHS { background:#d4edda; }
 .NCLEX { background:#cce5ff; }
@@ -59,9 +58,36 @@ button { margin-top:15px; padding:10px 20px; font-size:16px; }
 
 <script>
 // ================================
-// YOUR QUESTION BANK (INJECT 100+ QUESTIONS)
+// QUESTION BANK (YOUR FORMAT)
 // ================================
 const questions = [
+  {
+    q: "When a nurse places a febrile infant into cold water, how is heat primarily lost?",
+    options: [
+      { text: "Evaporation", tag: "SAFE_DELAY" },
+      { text: "Convection", tag: "NCLEX" },
+      { text: "Conduction", tag: "SCFHS" },
+      { text: "Radiation", tag: "STR" }
+    ],
+    correctTag: "SCFHS",
+    rationale: {
+      correct: "Direct contact transfers heat from warm skin to cold water.",
+      distractors: {
+        SAFE_DELAY: "Evaporation requires liquid turning to vapor, not immersion.",
+        NCLEX: "Convection involves moving air or fluid, not direct contact.",
+        STR: "Radiation transfers heat without contact."
+      },
+      corePrinciple: `Conduction → direct contact
+Convection → moving air/fluid
+Radiation → no contact
+Evaporation → liquid to vapor`,
+      pathophysiologicChain: `Immersion → thermal gradient → heat flows from skin to water → core temperature decreases`,
+      intuitiveMapping: `Touch ice = conduction
+Cold wind = convection
+Sun = radiation
+Sweat drying = evaporation`
+    }
+  },
   {
     q: "A client with chronic pain asks about nonpharmacologic pain management. Which option should the nurse recommend?",
     options: [
@@ -77,28 +103,13 @@ const questions = [
         SAFE_DELAY: "Bed rest may worsen pain.",
         NCLEX: "Activity supports pain control.",
         STR: "Delaying management increases suffering."
-      }
-    }
-  },
-  {
-    q: "Which nursing intervention BEST promotes sleep in hospitalized clients?",
-    options: [
-      { text: "Cluster nursing care activities", tag: "SCFHS" },
-      { text: "Keep lights on overnight", tag: "SAFE_DELAY" },
-      { text: "Perform frequent vital sign checks", tag: "NCLEX" },
-      { text: "Encourage daytime napping", tag: "STR" }
-    ],
-    correctTag: "SCFHS",
-    rationale: {
-      correct: "Clustering care minimizes sleep interruptions.",
-      distractors: {
-        SAFE_DELAY: "Lighting disrupts sleep.",
-        NCLEX: "Frequent checks interrupt rest.",
-        STR: "Daytime napping affects nighttime sleep."
-      }
+      },
+      corePrinciple: `Relaxation techniques → reduce sympathetic activation`,
+      pathophysiologicChain: `Pain stimulus → CNS modulation → decreased pain perception`,
+      intuitiveMapping: `Guided imagery → distracts brain → reduces perceived pain`
     }
   }
-  // ADD MORE QUESTIONS HERE
+  // Add more questions here
 ];
 
 // ================================
@@ -155,13 +166,19 @@ function selectAnswer(tag, div) {
     else d.classList.add("incorrect");
   });
 
-  // Build review using the rationale inside the question
+  // Build review including core principle, pathophysiologic chain, and intuitive mapping
   let html = `<div class="header">✅ Correct Rationale</div>${q.rationale.correct}`;
   html += `<div class="header">❌ Option Analysis</div>`;
   q.options.forEach(o=>{
     if(o.tag===q.correctTag) html += `<div><b>${o.text}</b> (${o.tag}) — Correct</div>`;
     else html += `<div><b>${o.text}</b> (${o.tag}) — ${q.rationale.distractors[o.tag]}</div>`;
   });
+
+  html += `<div class="expand">
+    <div class="header">Core Principle (Exam Language)</div><pre>${q.rationale.corePrinciple}</pre>
+    <div class="header">Pathophysiologic Chain</div><pre>${q.rationale.pathophysiologicChain}</pre>
+    <div class="header">Intuitive Clinical Mapping</div><pre>${q.rationale.intuitiveMapping}</pre>
+  </div>`;
 
   review.innerHTML = html;
   document.getElementById("nextBtn").classList.remove("hidden");
